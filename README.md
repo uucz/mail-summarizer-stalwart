@@ -8,7 +8,7 @@ Stalwart Mail Server provides a handy tool, MTA-Hook, that enables the processin
 ## What does the summary look like?
 Below is a screenshot of what it looks like.  You can customize the codes and the prompt however you like to fit your needs.
 
-<img src="https://raw.githubusercontent.com/Har-Kuun/mail-summary-stalwart/refs/heads/main/screenshots/example_summary.png" width="500"/>
+<img src="https://raw.githubusercontent.com/Har-Kuun/mail-summary-stalwart/refs/heads/main/screenshots/example_summary_2.png" width="500"/>
 
 ## How to use it?
 Put the .php file behind a webserver, fill in your API key, plug in the URL into Stalwart MTA-Hooks settings, and enjoy.
