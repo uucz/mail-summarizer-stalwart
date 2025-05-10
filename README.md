@@ -1,4 +1,4 @@
-# mail-summary-stalwart
+# Automated Mail Summarizer for Stalwart Mail Server
 This is a simple PHP script that automatically summarizes all incoming emails and prepends the summary to the email content.
 The script utilizes the MTA-Hook feature provided by [Stalwart Mail Servers](https://github.com/stalwartlabs/mail-server).
 
