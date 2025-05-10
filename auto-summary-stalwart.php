@@ -1,15 +1,18 @@
 <?php
 /**
  * Stalwart MTA Hook for Email Summarization using OpenAI
+ * Har-Kuun @ Github
+ * https://github.com/Har-Kuun/mail-summary-stalwart
  */
 
 // --- Configuration ---
-$openai_api_key = "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // Replace with your actual OpenAI API key
+$openai_api_key = "sk-proj-xxxxxx"; // Replace with your actual OpenAI API key
 $openai_model = "gpt-4o-mini";
 $openai_api_url = "https://api.openai.com/v1/chat/completions";
-$summary_max_tokens = 100; 
-$summary_temperature = 0.5;
-$curl_timeout = 15; 
+$summary_max_tokens = 100; // Max tokens for the summary (1-2 sentences should be less)
+$summary_temperature = 0.5; // Controls randomness, lower is more deterministic
+$curl_timeout = 15; // Seconds to wait for OpenAI API response
+
 
 function get_email_summary(string $email_content, string $api_key, string $model, string $url, int $max_tokens, float $temperature, int $timeout): ?string {
     // Construct the prompt for OpenAI
@@ -26,7 +29,7 @@ function get_email_summary(string $email_content, string $api_key, string $model
         'max_tokens' => $max_tokens,
         'temperature' => $temperature,
         'n' => 1,
-        'stop' => null 
+        'stop' => null // Let the model decide when to stop (within max_tokens)
     ];
 
     $ch = curl_init($url);
@@ -93,13 +96,21 @@ if ($request_data === null || !isset($request_data['message']['contents']) || !i
     exit;
 }
 
+// Check if the email is likely outgoing (e.g., SASL authenticated)
+$is_outgoing = false;
+if (isset($request_data['context']['sasl']['login']) && !empty($request_data['context']['sasl']['login'])) {
+    $is_outgoing = true;
+    $summary_status_message = 'Skipped (Outgoing Email)';
+}
+
+
 $original_email_content = $request_data['message']['contents'];
 $new_email_content = $original_email_content; // Default to original if summary fails or is skipped
 $modifications = [];
-$summary_status_message = 'No summary generated';
 
-// Only attempt to summarize if there's actual content
-if (!empty(trim($original_email_content))) {
+
+// Only attempt to summarize if there's actual content AND it's not an outgoing email
+if (!$is_outgoing && !empty(trim($original_email_content))) {
     $summary_text = get_email_summary(
         $original_email_content, // Pass original for context, function will strip_tags for OpenAI
         $openai_api_key, $openai_model, $openai_api_url,
@@ -243,13 +254,14 @@ if (!empty(trim($original_email_content))) {
         }
 
         $modifications[] = ['type' => 'replaceContents', 'value' => $new_email_content];
-        $summary_status_message = 'Success';
-    } else {
+        $summary_status_message = 'Success (attempted injection)';
+    } else { // summary_text was null or empty
         $summary_status_message = ($summary_text === null) ? 'API Error or Timeout' : 'Empty Summary Received';
     }
-} else {
+} elseif (!$is_outgoing && empty(trim($original_email_content))) {
     $summary_status_message = 'Skipped (Empty Original Content)';
 }
+// If $is_outgoing is true, $summary_status_message is already 'Skipped (Outgoing Email)'
 
 // Add a header indicating summary status
 $modifications[] = [
